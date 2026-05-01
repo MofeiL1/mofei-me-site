@@ -1,0 +1,15 @@
+{
+  "name": "mofei-me-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal landing page at mofei.me. Static HTML/CSS/SVG, no build step. Cloudflare Pages serves the public/ directory directly.",
+  "scripts": {
+    "regen-qrs": "node scripts/generate-qrs.js"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.34.0"
+  }
+}

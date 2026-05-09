@@ -17,6 +17,13 @@
   <link rel="stylesheet" href="/styles/soundenginevr.css">
 </head>
 <body>
+  <!-- Dark intro overlay. Matches mofei.me's #0f0f1a so the cross-doc
+       view transition snapshot of this page reads as nearly identical
+       to the homepage at the moment of crossfade — the brightness
+       shift then happens GRADUALLY here as the overlay fades, not
+       inside the VT itself. -->
+  <div class="page-darken" aria-hidden="true"></div>
+
   <nav class="nav">
     <a class="nav-brand" href="/">mofei.me</a>
     <span class="nav-meta">A Physical Sound Engine · 2026 capstone</span>

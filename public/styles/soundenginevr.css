@@ -416,16 +416,40 @@ main { padding: 0 24px; }
   navigation: auto;
 }
 
-/* See style.css for explanation. Same plus-lighter recipe both directions
-   so mofei.me ↔ /soundenginevr/ navigation feels identical, with neither
-   "dim middle" alpha artifact nor the contracting-frame artifact from
-   keeping new at full opacity. */
+/* Dark intro overlay — matches mofei.me's #0f0f1a so that cross-doc
+   navigation arrives at "what looks like still the homepage", and the
+   real brightness lift happens here over ~1.2s as this layer fades.
+   Holds at full opacity through the VT window (0–0.5s), then fades. */
+.page-darken {
+  position: fixed;
+  inset: 0;
+  background-color: #0f0f1a;
+  z-index: 9999;
+  pointer-events: none;
+  animation: page-darken-fade 1.6s ease-out forwards;
+}
+
+@keyframes page-darken-fade {
+  0%   { opacity: 1; }
+  30%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-darken { display: none; }
+}
+
+/* View transitions. Now that the dark overlay handles the brightness
+   shift, the VT itself is just a short crossfade between two dark-ish
+   snapshots — no perceptible brightness change inside the VT window.
+   plus-lighter blend keeps the math clean (linear color interp, no
+   dim middle frame). */
 ::view-transition-image-pair(root) {
   isolation: auto;
 }
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.9s;
+  animation-duration: 0.5s;
   animation-timing-function: linear;
   mix-blend-mode: plus-lighter;
 }

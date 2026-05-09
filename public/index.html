@@ -13,9 +13,13 @@
     <h1>Mofei Li</h1>
     <p class="status">Under construction · 网站建设中</p>
     <a class="featured-link" href="/soundenginevr/">
-      <span class="featured-eyebrow">Latest project</span>
-      <span class="featured-title">A Physical Sound Engine&nbsp;&nbsp;→</span>
-      <span class="featured-meta">Berklee Capstone · Spring 2026</span>
+      <span class="featured-content">
+        <span class="featured-eyebrow">Latest project</span>
+        <span class="featured-title-line">
+          <span class="featured-title">A Physical Sound Engine</span><span class="featured-arrow" aria-hidden="true">→</span>
+        </span>
+        <span class="featured-meta">Berklee Capstone · Spring 2026</span>
+      </span>
     </a>
     <div class="qrs">
       <a class="qr-card" href="https://instagram.com/non_ink_l" target="_blank" rel="noopener">
@@ -34,5 +38,41 @@
       </div>
     </div>
   </main>
+  <script>
+    // Liquid glass: mouse-tracking specular + 3D tilt
+    (function () {
+      const link = document.querySelector('.featured-link');
+      if (!link) return;
+
+      let rafId = null;
+      let pendingX = 0.5, pendingY = 0.5;
+      let active = false;
+
+      function apply() {
+        const tiltY = (pendingX - 0.5) * 8;     // rotateY: −4 to +4 deg
+        const tiltX = (pendingY - 0.5) * -7;    // rotateX: −3.5 to +3.5 deg (inverted)
+        link.style.setProperty('--mx', (pendingX * 100) + '%');
+        link.style.setProperty('--my', (pendingY * 100) + '%');
+        link.style.setProperty('--tx', tiltY + 'deg');
+        link.style.setProperty('--ty', tiltX + 'deg');
+        rafId = null;
+      }
+
+      link.addEventListener('pointermove', (e) => {
+        const r = link.getBoundingClientRect();
+        pendingX = (e.clientX - r.left) / r.width;
+        pendingY = (e.clientY - r.top) / r.height;
+        active = true;
+        if (!rafId) rafId = requestAnimationFrame(apply);
+      });
+
+      link.addEventListener('pointerleave', () => {
+        active = false;
+        pendingX = 0.5;
+        pendingY = 0.5;
+        if (!rafId) rafId = requestAnimationFrame(apply);
+      });
+    })();
+  </script>
 </body>
 </html>

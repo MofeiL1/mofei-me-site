@@ -416,34 +416,13 @@ main { padding: 0 24px; }
   navigation: auto;
 }
 
-/* Dark intro overlay — covers the page in mofei.me's #0f0f1a from first
-   paint. Stays at opacity 1 with NO animation. JS in <head> hooks the
-   pagereveal event, waits for VT.finished, then adds .fade to trigger
-   the one-time opacity transition to 0. This avoids the "white flash"
-   that an auto-running CSS animation produces when the snapshot timing
-   doesn't align with the keyframes. */
-.page-darken {
-  position: fixed;
-  inset: 0;
-  background-color: #0f0f1a;
-  z-index: 99999;
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 1.2s ease-out;
-}
-.page-darken.fade {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-darken { display: none; }
-}
-
-/* View transitions. Now that the dark overlay handles the brightness
-   shift, the VT itself is just a short crossfade between two dark-ish
-   snapshots — no perceptible brightness change inside the VT window.
-   plus-lighter blend keeps the math clean (linear color interp, no
-   dim middle frame). */
+/* View transitions. The brightness lift now happens on the homepage
+   BEFORE the navigation fires (.page-brighten overlay there matches
+   this page's bg gradient). By the time the VT snapshot is taken,
+   the homepage looks already cream/light, so VT crossfades between
+   two light snapshots — and the unavoidable browser-default "white
+   navigation flash" no longer registers as a flash because the
+   incoming color is the same brightness. */
 ::view-transition-image-pair(root) {
   isolation: auto;
 }

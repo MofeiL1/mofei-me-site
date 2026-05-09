@@ -19,6 +19,35 @@
   navigation: auto;
 }
 
+/* Pre-navigation brightening overlay. Sits at opacity 0 normally;
+   JS adds .lit when the featured-link is clicked, transitioning to
+   opacity 1 over 0.7s, THEN navigation triggers. The gradient
+   matches /soundenginevr/'s body bg exactly (sky-top → sky-mid →
+   sky-bot), so by the time the VT snapshot is taken, the home page
+   already looks like the destination at full brightness — the
+   browser-default "white during navigation" flash blends in. */
+.page-brighten {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      #b8d3ea 0%,
+      #f5f3ee 38%,
+      #f5f3ee 62%,
+      #ececea 100%);
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.7s ease-in;
+}
+.page-brighten.lit {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-brighten { display: none; }
+}
+
 /* Smooth dark↔light crossfade — Chrome team's recommended recipe:
    - Default UA crossfade uses alpha-over compositing, which dims at the
      midpoint (1−(1−.5)(1−.5)=.75 total opacity). Felt jumpy + the

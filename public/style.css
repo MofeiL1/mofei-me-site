@@ -133,8 +133,12 @@ main {
   background: rgba(255, 255, 255, 0.04);
 
   /* THE actual glass: SVG lens distortion + blur + saturate */
-  backdrop-filter: url(#liquid-glass) blur(2px) saturate(160%) brightness(1.05);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  /* Full pipeline (distort → blur → saturate → dither) lives inside the
+     SVG filter so dithering grain is applied LAST, after saturation has
+     finished amplifying color differences. Adding blur/saturate here
+     would compound on top of the in-filter steps and reintroduce banding. */
+  backdrop-filter: url(#liquid-glass);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);  /* fallback */
 
   /* All edge bevels via box-shadow — single-pixel inset rules cannot band */
   box-shadow:

@@ -8,6 +8,44 @@
   --card-handle: #6b6b80;
 }
 
+/* ─────────────────────────────────────────
+   Cross-document view transitions.
+   When a user clicks a same-origin link, the browser snapshots the
+   outgoing and incoming pages and crossfades them. Browsers without
+   support fall back to a normal navigation (no error). Both pages
+   need this rule for transitions to apply across them.
+   ───────────────────────────────────────── */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: page-zoom-out;
+}
+::view-transition-new(root) {
+  animation-name: page-zoom-in;
+}
+
+@keyframes page-zoom-out {
+  to { opacity: 0; transform: scale(0.985); }
+}
+@keyframes page-zoom-in {
+  from { opacity: 0; transform: scale(1.015); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.001s;
+  }
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {

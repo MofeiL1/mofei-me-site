@@ -406,6 +406,43 @@ main { padding: 0 24px; }
   #box-09, #box-10, #box-11, #box-12, #box-13 { grid-column: auto; }
 }
 
+/* ─────────────────────────────────────────
+   Cross-document view transitions.
+   Mirror of the rule on mofei.me/style.css so the dark↔light navigation
+   between the homepage and this page crossfades smoothly instead of
+   jump-cutting. Browsers without support fall back to normal navigation.
+   ───────────────────────────────────────── */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: page-zoom-out;
+}
+::view-transition-new(root) {
+  animation-name: page-zoom-in;
+}
+
+@keyframes page-zoom-out {
+  to { opacity: 0; transform: scale(0.985); }
+}
+@keyframes page-zoom-in {
+  from { opacity: 0; transform: scale(1.015); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.001s;
+  }
+}
+
 .card-demo {
   background: var(--card-bg);
   border: 1px solid var(--card-border);

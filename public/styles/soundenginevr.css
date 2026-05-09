@@ -416,26 +416,23 @@ main { padding: 0 24px; }
   navigation: auto;
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.7s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+/* See style.css for explanation. Mirror the strategy here so transitions
+   in either direction (mofei.me ↔ /soundenginevr/) behave identically:
+   keep NEW at opacity 1, fade OLD out → total opacity stays 100% and
+   the brightness shift is monotonic (no dimmer middle frame). */
 ::view-transition-old(root) {
-  animation-name: page-zoom-out;
+  animation-name: page-fade-out;
+  animation-duration: 0.9s;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: forwards;
 }
 ::view-transition-new(root) {
-  animation-name: page-zoom-in;
+  animation: none;
+  opacity: 1;
 }
 
-/* Amped up so any working transition is unmistakable.
-   Tune back down once we've confirmed it's actually firing. */
-@keyframes page-zoom-out {
-  to { opacity: 0; transform: scale(0.92); }
-}
-@keyframes page-zoom-in {
-  from { opacity: 0; transform: scale(1.08); }
+@keyframes page-fade-out {
+  to { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

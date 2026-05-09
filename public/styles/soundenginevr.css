@@ -416,23 +416,23 @@ main { padding: 0 24px; }
   navigation: auto;
 }
 
-/* Dark intro overlay — matches mofei.me's #0f0f1a so that cross-doc
-   navigation arrives at "what looks like still the homepage", and the
-   real brightness lift happens here over ~1.2s as this layer fades.
-   Holds at full opacity through the VT window (0–0.5s), then fades. */
+/* Dark intro overlay — covers the page in mofei.me's #0f0f1a from first
+   paint. Stays at opacity 1 with NO animation. JS in <head> hooks the
+   pagereveal event, waits for VT.finished, then adds .fade to trigger
+   the one-time opacity transition to 0. This avoids the "white flash"
+   that an auto-running CSS animation produces when the snapshot timing
+   doesn't align with the keyframes. */
 .page-darken {
   position: fixed;
   inset: 0;
   background-color: #0f0f1a;
-  z-index: 9999;
+  z-index: 99999;
   pointer-events: none;
-  animation: page-darken-fade 1.6s ease-out forwards;
+  opacity: 1;
+  transition: opacity 1.2s ease-out;
 }
-
-@keyframes page-darken-fade {
-  0%   { opacity: 1; }
-  30%  { opacity: 1; }
-  100% { opacity: 0; }
+.page-darken.fade {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

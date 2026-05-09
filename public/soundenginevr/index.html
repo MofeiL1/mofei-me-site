@@ -15,6 +15,44 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles/soundenginevr.css">
+  <script>
+    // Dark intro overlay timing. The .page-darken div sits at opacity 1
+    // unconditionally until this script fires the .fade class. Listening
+    // for pagereveal in <head> guarantees we register before the event,
+    // even on cross-doc VT navigation.
+    (function () {
+      function fadeOverlay() {
+        const o = document.querySelector('.page-darken');
+        if (!o) return;
+        // Use rAF so the transition definition has settled into the
+        // initial frame before we change the property
+        requestAnimationFrame(() => {
+          o.classList.add('fade');
+          setTimeout(() => o.remove(), 1400);
+        });
+      }
+      if ('onpagereveal' in window) {
+        window.addEventListener('pagereveal', (e) => {
+          if (e.viewTransition) {
+            // Came via cross-doc VT — wait until the crossfade is done,
+            // then begin the brightness lift. This decouples the 0.5s VT
+            // from the ~1.2s overlay fade so they don't fight each other.
+            e.viewTransition.finished.then(fadeOverlay, fadeOverlay);
+          } else {
+            // Direct visit / refresh — fade immediately on first render
+            fadeOverlay();
+          }
+        });
+      } else {
+        // Older browser, no VT support: fade once DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', fadeOverlay);
+        } else {
+          fadeOverlay();
+        }
+      }
+    })();
+  </script>
 </head>
 <body>
   <!-- Dark intro overlay. Matches mofei.me's #0f0f1a so the cross-doc

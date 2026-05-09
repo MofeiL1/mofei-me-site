@@ -19,31 +19,43 @@
   navigation: auto;
 }
 
-/* Smooth dark↔light crossfade strategy:
-   - The default UA crossfade animates BOTH old and new opacity.
-     Mid-transition each is at ~50% alpha, so total composited opacity
-     is 1 − (1−0.5)(1−0.5) = 0.75 — the viewport visibly dims for a
-     frame, then "snaps" to the new page. That's the "not smooth +
-     sudden brightness shift" feel.
-   - Fix: keep NEW at opacity 1 the entire time and only fade OLD out.
-     Old is composited on top, so as it goes 1 → 0 it reveals new
-     underneath. Total opacity stays 100%, dark dissolves to light
-     monotonically with no dimmer middle frame.
-   - Scale also dropped — it added a separate "jumpy" sensation on top
-     of the brightness shift. */
+/* Smooth dark↔light crossfade — Chrome team's recommended recipe:
+   - Default UA crossfade uses alpha-over compositing, which dims at the
+     midpoint (1−(1−.5)(1−.5)=.75 total opacity). Felt jumpy + the
+     brightness shift was abrupt.
+   - Tried "only fade old" — fixed the dim issue but exposed the new
+     page's featured-link halo from t=0, which read as a "frame
+     contracting inward" when the old peeled off.
+   - This recipe (mix-blend-mode: plus-lighter + isolation: auto on
+     image-pair) makes the snapshots blend ADDITIVELY: at t=0.5 each
+     contributes 50% directly, summing to 100% — strictly linear color
+     interpolation with no dim middle. Both fade simultaneously so
+     neither page is "fully visible underneath" at any point, which
+     eliminates the contracting-frame artifact too.
+   - Linear easing because color blending IS linear; ease-in-out would
+     bend the perceptual brightness curve. */
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.9s;
+  animation-timing-function: linear;
+  mix-blend-mode: plus-lighter;
+}
 ::view-transition-old(root) {
   animation-name: page-fade-out;
-  animation-duration: 0.9s;
-  animation-timing-function: ease-in-out;
-  animation-fill-mode: forwards;
 }
 ::view-transition-new(root) {
-  animation: none;
-  opacity: 1;
+  animation-name: page-fade-in;
 }
 
 @keyframes page-fade-out {
   to { opacity: 0; }
+}
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -416,23 +416,32 @@ main { padding: 0 24px; }
   navigation: auto;
 }
 
-/* See style.css for explanation. Mirror the strategy here so transitions
-   in either direction (mofei.me ↔ /soundenginevr/) behave identically:
-   keep NEW at opacity 1, fade OLD out → total opacity stays 100% and
-   the brightness shift is monotonic (no dimmer middle frame). */
+/* See style.css for explanation. Same plus-lighter recipe both directions
+   so mofei.me ↔ /soundenginevr/ navigation feels identical, with neither
+   "dim middle" alpha artifact nor the contracting-frame artifact from
+   keeping new at full opacity. */
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.9s;
+  animation-timing-function: linear;
+  mix-blend-mode: plus-lighter;
+}
 ::view-transition-old(root) {
   animation-name: page-fade-out;
-  animation-duration: 0.9s;
-  animation-timing-function: ease-in-out;
-  animation-fill-mode: forwards;
 }
 ::view-transition-new(root) {
-  animation: none;
-  opacity: 1;
+  animation-name: page-fade-in;
 }
 
 @keyframes page-fade-out {
   to { opacity: 0; }
+}
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

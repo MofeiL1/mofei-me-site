@@ -11,7 +11,7 @@
 <body>
   <svg class="defs-only" aria-hidden="true" focusable="false">
     <defs>
-      <filter id="liquid-glass" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <filter id="liquid-glass" color-interpolation-filters="sRGB">
         <!-- Displacement map is a Canvas-generated PNG (data URI).
              It's neutral gray (128,128,128 = zero displacement) everywhere
              EXCEPT a thin ring at the rounded-rect border where R/B
@@ -170,6 +170,22 @@
         const w = Math.round(r.width);
         const h = Math.round(r.height);
         if (w < 10 || h < 10) return;
+
+        // Filter region must match the canvas-map aspect ratio so feImage
+        // (preserveAspectRatio="none") stretches it 1:1. Otherwise the
+        // displacement edge-ring lands at the wrong spot relative to
+        // the element box and the shadow no longer traces the visible glass.
+        const maxDisp = Math.max(SCALE * 0.5, 20);
+        const pctX = Math.ceil(maxDisp / w * 100);
+        const pctY = Math.ceil(maxDisp / h * 100);
+        const filter = document.getElementById('liquid-glass');
+        if (filter) {
+          filter.setAttribute('x', '-' + pctX + '%');
+          filter.setAttribute('y', '-' + pctY + '%');
+          filter.setAttribute('width', (100 + pctX * 2) + '%');
+          filter.setAttribute('height', (100 + pctY * 2) + '%');
+        }
+
         const uri = buildMap(w, h);
         feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', uri);
         feImage.setAttribute('href', uri);

@@ -11,22 +11,37 @@
 <body>
   <svg class="defs-only" aria-hidden="true" focusable="false">
     <defs>
-      <filter id="liquid-glass" x="0%" y="0%" width="100%" height="100%">
-        <!-- Step 1: lens distortion via low-frequency fractal noise -->
-        <feTurbulence type="fractalNoise" baseFrequency="0.006 0.01" numOctaves="2" seed="17" result="warp"/>
-        <feGaussianBlur in="warp" stdDeviation="1.4" result="warpSmooth"/>
-        <feDisplacementMap in="SourceGraphic" in2="warpSmooth" scale="60" xChannelSelector="R" yChannelSelector="G" result="warped"/>
+      <filter id="liquid-glass" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+        <!-- Displacement map is a Canvas-generated PNG (data URI).
+             It's neutral gray (128,128,128 = zero displacement) everywhere
+             EXCEPT a thin ring at the rounded-rect border where R/B
+             gradients encode X/Y refraction vectors. This is what gives
+             the "clear center, edge refraction" Apple liquid glass look. -->
+        <feImage id="liquid-map" result="map" preserveAspectRatio="none"/>
 
-        <!-- Step 2: soften and saturate inside the filter chain (was in CSS) -->
-        <feGaussianBlur in="warped" stdDeviation="1" result="softened"/>
-        <feColorMatrix in="softened" type="saturate" values="1.35" result="saturated"/>
+        <!-- Three separate displacement passes with offset scales create
+             chromatic aberration: red bends most, blue least → rainbow
+             fringe at edges, exactly the Apple effect. -->
+        <feDisplacementMap in="SourceGraphic" in2="map" scale="-180" xChannelSelector="R" yChannelSelector="B" result="dispR"/>
+        <feColorMatrix in="dispR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redOnly"/>
 
-        <!-- Step 3: high-frequency grain to dither the saturated result.
-             This is the LAST step so it perturbs final pixel values
-             across 8-bit bin boundaries → visible banding disappears. -->
+        <feDisplacementMap in="SourceGraphic" in2="map" scale="-170" xChannelSelector="R" yChannelSelector="B" result="dispG"/>
+        <feColorMatrix in="dispG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="greenOnly"/>
+
+        <feDisplacementMap in="SourceGraphic" in2="map" scale="-160" xChannelSelector="R" yChannelSelector="B" result="dispB"/>
+        <feColorMatrix in="dispB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blueOnly"/>
+
+        <feBlend in="redOnly" in2="greenOnly" mode="screen" result="rg"/>
+        <feBlend in="rg" in2="blueOnly" mode="screen" result="combined"/>
+
+        <!-- Saturate boost applied AFTER displacement combine, before dithering -->
+        <feColorMatrix in="combined" type="saturate" values="1.25" result="saturated"/>
+
+        <!-- Final step: high-frequency grain to dither across 8-bit bin
+             boundaries. This kills banding even after saturation amplification. -->
         <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="1" seed="42" result="grain"/>
         <feComponentTransfer in="grain" result="grainFaded">
-          <feFuncA type="linear" slope="0.10"/>
+          <feFuncA type="linear" slope="0.08"/>
         </feComponentTransfer>
         <feBlend in="grainFaded" in2="saturated" mode="overlay"/>
       </filter>
@@ -62,18 +77,119 @@
     </div>
   </main>
   <script>
-    // Liquid glass: mouse-tracking specular + 3D tilt
+    // Liquid glass: Canvas-generated displacement map + mouse-tracking specular + 3D tilt
     (function () {
       const link = document.querySelector('.featured-link');
-      if (!link) return;
+      const feImage = document.getElementById('liquid-map');
+      if (!link || !feImage) return;
 
+      // Build a displacement map matching the rounded-rect button shape.
+      // Outer area: neutral gray (rgb 128,128,128) → zero displacement.
+      // Inside button: black + red horizontal gradient + blue vertical gradient
+      //   (composited via 'difference') encode X/Y refraction.
+      // Inset rounded rect of blurred neutral gray with high alpha overwrites
+      //   the center, leaving a soft refractive RING at the border.
+      // Result: clear-glass center, refractive edges (Apple liquid glass).
+      const SCALE = 180;
+      const BORDER_RATIO = 0.08;    // border ring as fraction of min(w,h)
+      const BLUR = 14;              // blur on the center clear-out (px)
+      const RADIUS = 22;            // matches CSS border-radius
+
+      function buildMap(width, height) {
+        const maxDisp = Math.max(SCALE * 0.5, 20);
+        const padX = Math.ceil(maxDisp);
+        const padY = Math.ceil(maxDisp);
+        const totalW = width + padX * 2;
+        const totalH = height + padY * 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = totalW;
+        canvas.height = totalH;
+        const ctx = canvas.getContext('2d');
+
+        // Neutral gray everywhere = no displacement
+        ctx.fillStyle = 'rgb(128, 128, 128)';
+        ctx.fillRect(0, 0, totalW, totalH);
+
+        const ox = padX, oy = padY;
+
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(ox, oy, width, height, RADIUS);
+        } else {
+          // older browsers fallback
+          ctx.rect(ox, oy, width, height);
+        }
+        ctx.clip();
+
+        // Inside button: black canvas (will be modified by gradients)
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(ox, oy, width, height);
+
+        // Horizontal red gradient → X displacement
+        const redGrad = ctx.createLinearGradient(ox + width, oy, ox, oy);
+        redGrad.addColorStop(0, '#000000');
+        redGrad.addColorStop(1, '#ff0000');
+        ctx.fillStyle = redGrad;
+        ctx.fillRect(ox, oy, width, height);
+
+        // Vertical blue gradient → Y displacement (composited 'difference')
+        ctx.globalCompositeOperation = 'difference';
+        const blueGrad = ctx.createLinearGradient(ox, oy, ox, oy + height);
+        blueGrad.addColorStop(0, '#000000');
+        blueGrad.addColorStop(1, '#0000ff');
+        ctx.fillStyle = blueGrad;
+        ctx.fillRect(ox, oy, width, height);
+        ctx.globalCompositeOperation = 'source-over';
+
+        // Inset blurred neutral-gray rect — clears displacement from CENTER,
+        // leaves the edge ring with the directional gradient encoding
+        const borderPx = Math.min(width, height) * BORDER_RATIO;
+        ctx.filter = 'blur(' + BLUR + 'px)';
+        ctx.fillStyle = 'hsla(0, 0%, 50%, 0.93)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(
+            ox + borderPx,
+            oy + borderPx,
+            width - borderPx * 2,
+            height - borderPx * 2,
+            RADIUS
+          );
+        } else {
+          ctx.rect(ox + borderPx, oy + borderPx, width - borderPx * 2, height - borderPx * 2);
+        }
+        ctx.fill();
+        ctx.restore();
+
+        return canvas.toDataURL('image/png');
+      }
+
+      function refreshMap() {
+        const r = link.getBoundingClientRect();
+        const w = Math.round(r.width);
+        const h = Math.round(r.height);
+        if (w < 10 || h < 10) return;
+        const uri = buildMap(w, h);
+        feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', uri);
+        feImage.setAttribute('href', uri);
+      }
+
+      refreshMap();
+      let resizeRaf = 0;
+      const ro = new ResizeObserver(() => {
+        cancelAnimationFrame(resizeRaf);
+        resizeRaf = requestAnimationFrame(refreshMap);
+      });
+      ro.observe(link);
+
+      // Pointer-tracking specular + 3D tilt
       let rafId = null;
       let pendingX = 0.5, pendingY = 0.5;
-      let active = false;
 
-      function apply() {
-        const tiltY = (pendingX - 0.5) * 8;     // rotateY: −4 to +4 deg
-        const tiltX = (pendingY - 0.5) * -7;    // rotateX: −3.5 to +3.5 deg (inverted)
+      function applyTilt() {
+        const tiltY = (pendingX - 0.5) * 8;
+        const tiltX = (pendingY - 0.5) * -7;
         link.style.setProperty('--mx', (pendingX * 100) + '%');
         link.style.setProperty('--my', (pendingY * 100) + '%');
         link.style.setProperty('--tx', tiltY + 'deg');
@@ -85,15 +201,12 @@
         const r = link.getBoundingClientRect();
         pendingX = (e.clientX - r.left) / r.width;
         pendingY = (e.clientY - r.top) / r.height;
-        active = true;
-        if (!rafId) rafId = requestAnimationFrame(apply);
+        if (!rafId) rafId = requestAnimationFrame(applyTilt);
       });
-
       link.addEventListener('pointerleave', () => {
-        active = false;
         pendingX = 0.5;
         pendingY = 0.5;
-        if (!rafId) rafId = requestAnimationFrame(apply);
+        if (!rafId) rafId = requestAnimationFrame(applyTilt);
       });
     })();
   </script>

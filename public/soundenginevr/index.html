@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Physical Sound Engine — Mofei Li</title>
+  <meta name="description" content="A real-time physical sound engine — every sound computed from physics, not played from a sample. By Mofei Li, Berklee 2026.">
+  <meta name="author" content="Mofei Li">
+  <meta property="og:title" content="A Physical Sound Engine — Mofei Li">
+  <meta property="og:description" content="Every sound computed from physics, not from samples. Runs in browsers, on macOS, on Windows, and on a Quest 3 standalone.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mofei.me/soundenginevr/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/soundenginevr.css">
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-brand" href="/">mofei.me</a>
+    <span class="nav-meta">A Physical Sound Engine · 2026 capstone</span>
+  </nav>
+
+  <aside class="toc" aria-label="Page sections">
+    <nav>
+      <p class="toc-label">Principle</p>
+      <a href="#box-01" class="toc-item" data-id="box-01"><span class="toc-num">1</span><span class="toc-text">Resonance</span></a>
+      <a href="#box-02" class="toc-item" data-id="box-02"><span class="toc-num">2</span><span class="toc-text">Single mode</span></a>
+      <a href="#box-03" class="toc-item" data-id="box-03"><span class="toc-num">3</span><span class="toc-text">16 modes</span></a>
+      <a href="#box-04" class="toc-item" data-id="box-04"><span class="toc-num">4</span><span class="toc-text">Inharmonicity</span></a>
+
+      <p class="toc-label">Value</p>
+      <a href="#box-05" class="toc-item" data-id="box-05"><span class="toc-num">5</span><span class="toc-text">Why not record?</span></a>
+      <a href="#box-06" class="toc-item" data-id="box-06"><span class="toc-num">6</span><span class="toc-text">Synth, not sample</span></a>
+
+      <p class="toc-label">Physics</p>
+      <a href="#box-07" class="toc-item" data-id="box-07"><span class="toc-num">7</span><span class="toc-text">Physics → sound</span></a>
+      <a href="#box-08" class="toc-item" data-id="box-08"><span class="toc-num">8</span><span class="toc-text">Coupled materials</span></a>
+
+      <p class="toc-label">Demos</p>
+      <a href="#box-09" class="toc-item" data-id="box-09"><span class="toc-num">9</span><span class="toc-text">Physical hands</span></a>
+      <a href="#box-10" class="toc-item" data-id="box-10"><span class="toc-num">10</span><span class="toc-text">Contact markers</span></a>
+      <a href="#box-11" class="toc-item" data-id="box-11"><span class="toc-num">11</span><span class="toc-text">Ramp drop</span></a>
+      <a href="#box-12" class="toc-item" data-id="box-12"><span class="toc-num">12</span><span class="toc-text">Tri-Mixer</span></a>
+      <a href="#box-13" class="toc-item" data-id="box-13"><span class="toc-num">13</span><span class="toc-text">Ball pool</span></a>
+      <a href="#reel"   class="toc-item" data-id="reel"><span class="toc-num is-icon">▶</span><span class="toc-text">Quest 3 reel</span></a>
+
+      <p class="toc-label">Integration</p>
+      <a href="#box-14" class="toc-item" data-id="box-14"><span class="toc-num">14</span><span class="toc-text">Voice pool</span></a>
+      <a href="#box-15" class="toc-item" data-id="box-15"><span class="toc-num">15</span><span class="toc-text">Physical grabbing</span></a>
+      <a href="#box-16" class="toc-item" data-id="box-16"><span class="toc-num">16</span><span class="toc-text">Audio haptics</span></a>
+      <a href="#box-17" class="toc-item" data-id="box-17"><span class="toc-num">17</span><span class="toc-text">HRTF</span></a>
+      <a href="#box-18" class="toc-item" data-id="box-18"><span class="toc-num">18</span><span class="toc-text">Unity ↔ DSP</span></a>
+      <a href="#box-19" class="toc-item" data-id="box-19"><span class="toc-num">19</span><span class="toc-text">WebUI</span></a>
+
+      <p class="toc-label">About</p>
+      <a href="#box-20" class="toc-item" data-id="box-20"><span class="toc-num">20</span><span class="toc-text">About the maker</span></a>
+    </nav>
+  </aside>
+
+  <main>
+
+    <!-- ── HERO ─────────────────────────────────────────────── -->
+    <header class="section hero">
+      <div class="frame">
+        <p class="eyebrow">Berklee Capstone · Spring 2026</p>
+        <h1>A Physical Sound Engine</h1>
+        <p class="lede">A real-time sound engine that computes every sound from the physics of contact. There are no audio files in the engine.</p>
+        <p class="byline">By <a href="https://github.com/MofeiL1" target="_blank" rel="noopener">Mofei Li</a></p>
+      </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════
+         MAIN LINE — Boxes 1–13
+         ════════════════════════════════════════════════════════ -->
+
+    <!-- Box 1 — Object sound -->
+    <section class="box box-text" id="box-01">
+      <div class="frame">
+        <p class="eyebrow">01</p>
+        <h2 class="box-title">Resonance</h2>
+        <p class="box-body">Objects prefer certain vibration frequencies. Strike one, and those frequencies ring out.</p>
+        <p class="box-body">These are its <strong>modes</strong> — set by an object's <strong>shape, density, material, and boundary conditions</strong>.</p>
+        <p class="box-body">An object's sound is the sum of its modes.</p>
+      </div>
+    </section>
+
+    <!-- Box 2 — One mode -->
+    <section class="box box-text" id="box-02">
+      <div class="frame">
+        <p class="eyebrow">02</p>
+        <h2 class="box-title">Single Mode</h2>
+        <p class="box-body">A mode needs only three numbers:</p>
+        <p class="box-body">· <strong>frequency</strong> — how high<br>· <strong>amplitude</strong> — starting loudness<br>· <strong>decay</strong> — fade time</p>
+        <p class="box-body">Those three are enough to synthesize that mode.</p>
+      </div>
+    </section>
+
+    <!-- Box 3 — 16 modes -->
+    <section class="box box-text" id="box-03">
+      <div class="frame">
+        <p class="eyebrow">03</p>
+        <h2 class="box-title">16 Modes</h2>
+        <p class="box-body">Real objects ring through many modes at once — often hundreds.</p>
+        <aside class="deep-frame">The ear tracks dominant modes, so this engine uses <strong>16 modes</strong> per material to preserve its timbral fingerprint.</aside>
+      </div>
+    </section>
+
+    <!-- Box 4 — Harmonic vs inharmonic -->
+    <section class="box box-text" id="box-04">
+      <div class="frame">
+        <p class="eyebrow">04</p>
+        <h2 class="box-title">Inharmonicity</h2>
+        <p class="box-body">Strings ring at integer multiples — harmonic, pitched.</p>
+        <p class="box-body">Bells, plates, and glass have scattered modes — inharmonic, noise-like.</p>
+        <aside class="deep-frame"><strong>Inharmonicity</strong> slides the modal distribution between those extremes.</aside>
+      </div>
+    </section>
+
+    <!-- Box 5 — The recording problem -->
+    <section class="box box-text" id="box-05">
+      <div class="frame">
+        <p class="eyebrow">05</p>
+        <h2 class="box-title">Why Not Record?</h2>
+        <p class="box-body">Wood on metal? One take. Metal on plastic? Another. Contact sounds quickly become X × Y × Z assets.</p>
+        <aside class="deep-frame">
+          Each material needs only <strong>7 parameters</strong>:
+          <ol class="param-list">
+            <li><code>freq</code></li>
+            <li><code>decay</code></li>
+            <li><code>hf_damping</code></li>
+            <li><code>inharmonicity</code></li>
+            <li><code>tonality</code></li>
+            <li><code>hardness</code></li>
+            <li><code>roughness</code></li>
+          </ol>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Box 6 — Computed = mutable -->
+    <section class="box box-text" id="box-06">
+      <div class="frame">
+        <p class="eyebrow">06</p>
+        <h2 class="box-title">Synth, Not Sample</h2>
+        <p class="box-body">Recordings replay a fixed take. Synthesized sound can <strong>change while it rings</strong> — move a material slider and the tail morphs live.</p>
+        <aside class="deep-frame">The audio-thread DSP reads Unity C# parameter updates instantly: hardness, tonality, and more. No restart, no buffer swap.</aside>
+      </div>
+    </section>
+
+    <!-- Box 7 — Physics drives sound -->
+    <section class="box box-text" id="box-07">
+      <div class="frame">
+        <p class="eyebrow">07</p>
+        <h2 class="box-title">Physics → Sound</h2>
+        <p class="box-body">Each collision gives <strong>impulse, contact point, normal, and PhysicsMaterial</strong> from Unity physics.</p>
+        <aside class="deep-frame">A <strong>normal / tangential</strong> split drives two paths: normal → <strong>impact</strong>, tangential → <strong>friction</strong>. One physical event, two independent exciters.</aside>
+      </div>
+    </section>
+
+    <!-- Box 8 — Two objects ring together -->
+    <section class="box box-text" id="box-08">
+      <div class="frame">
+        <p class="eyebrow">08</p>
+        <h2 class="box-title">Coupled Materials</h2>
+        <p class="box-body">A metal ball on wood is <strong>two objects sounding together</strong>. One voice holds both materials so each side can damp the other.</p>
+        <aside class="deep-frame">Each voice runs two mode banks (A / B). During contact, B shortens A's decay — <strong>steel on skin: 1.8s → 0.45s</strong>. This is <strong>cross-damping</strong>.</aside>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         DEMOS GRID — Boxes 9–13 — image-led cards
+         ════════════════════════════════════════════════════════ -->
+    <div class="demos-band">
+      <div class="demos-grid">
+
+        <!-- Box 9 — Physics Hand -->
+        <section class="card-demo" id="box-09">
+          <div class="demo-figure">
+            <img src="/soundenginevr/assets/PhysicsHand.png" alt="Physics-rigid-body hands shown in the Quest 3 build">
+          </div>
+          <div class="demo-body">
+            <p class="eyebrow">09</p>
+            <h2 class="box-title">Physical Hands</h2>
+            <p class="box-body">Put on the Quest and raise your hands. The visible hands are <strong>physics rigidbodies</strong>, not just meshes.</p>
+            <p class="box-body">They push, hit, and grab with real collision response — the shared entry point for every demo.</p>
+          </div>
+        </section>
+
+        <!-- Box 10 — Visual Markers -->
+        <section class="card-demo" id="box-10">
+          <div class="demo-figure">
+            <img src="/soundenginevr/assets/VisualMarkers.png" alt="Red impact markers and blue friction trail rendered at contact points">
+          </div>
+          <div class="demo-body">
+            <p class="eyebrow">10</p>
+            <h2 class="box-title">Contact Markers</h2>
+            <p class="box-body">Impacts draw a <span class="marker-red">red dot</span> at contact; size = impulse. Friction draws <span class="marker-blue">blue ticks</span> along the path; size = slide speed.</p>
+            <p class="box-body">Audio, haptics, and visuals are locked to the same physics event.</p>
+          </div>
+        </section>
+
+        <!-- Box 11 — Cube on a slope -->
+        <section class="card-demo" id="box-11">
+          <div class="demo-figure">
+            <img src="/soundenginevr/assets/dropcube.png" alt="Cube falling on a ramp inside the VR build">
+          </div>
+          <div class="demo-body">
+            <p class="eyebrow">11</p>
+            <h2 class="box-title">Ramp Drop</h2>
+            <p class="box-body">Press the button. The cube drops onto the ramp, then rolls and slides with generated contact sound.</p>
+          </div>
+        </section>
+
+        <!-- Box 12 — Triangle Mixer -->
+        <section class="card-demo" id="box-12">
+          <div class="demo-figure">
+            <img src="/soundenginevr/assets/trimixer.png" alt="Triangle Mixer — three-material barycentric blend between Steel, Wood, Concrete">
+          </div>
+          <div class="demo-body">
+            <p class="eyebrow">12</p>
+            <h2 class="box-title">Tri-Mixer</h2>
+            <p class="box-body">Three corners, three materials. Drag the puck and the drumpad's timbre follows in real time.</p>
+          </div>
+        </section>
+
+        <!-- Box 13 — Ball pool — same width as 11, 12, joins their row -->
+        <section class="card-demo" id="box-13">
+          <div class="demo-figure">
+            <img src="/soundenginevr/assets/ballpool.png" alt="64 wood balls inside a glass-walled concrete container">
+          </div>
+          <div class="demo-body">
+            <p class="eyebrow">13</p>
+            <h2 class="box-title">Ball Pool</h2>
+            <p class="box-body">Reach in and stir. Dense granular contact sound emerges naturally; swap materials live.</p>
+          </div>
+        </section>
+
+      </div>
+    </div><!-- /.demos-band -->
+
+    <!-- ════════════════════════════════════════════════════════
+         QUEST 3 BUILD — the full 2-min reel as a payoff
+         ════════════════════════════════════════════════════════ -->
+    <section class="box box-figure" id="reel">
+      <div class="frame">
+        <p class="eyebrow">Quest 3 build</p>
+        <h2 class="box-title">All of the above, in 3D</h2>
+        <p class="box-body">Two minutes of in-headset capture on a Quest 3 standalone — physical hands, contact markers, the three demos, all running on the same engine.</p>
+
+        <figure class="figure figure-video">
+          <video controls preload="metadata" poster="/soundenginevr/assets/ballpool.png">
+            <source src="/soundenginevr/assets/demo-reel.mp4" type="video/mp4">
+            Your browser does not support HTML5 video.
+          </video>
+          <div class="play-overlay" aria-hidden="true">
+            <div class="play-icon"></div>
+            <div class="play-label">Play demo reel · 2 min · sound on ↑</div>
+          </div>
+          <figcaption class="caption">
+            <span class="role">Demo reel · 2 min · in-headset capture · no commentary</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         INTEGRATION GRID — Boxes 14–19 — scan-reference cards
+         ════════════════════════════════════════════════════════ -->
+    <div class="integration-band">
+      <div class="integration-grid">
+
+        <!-- Box 14 — Voice Pool -->
+        <section class="card-side" id="box-14">
+          <p class="eyebrow">14</p>
+          <h2 class="box-title">Voice Pool</h2>
+          <p class="box-body">At startup, the DSP pre-allocates <strong>64 voices</strong> — each with its own mode banks, state, and output stream.</p>
+          <p class="box-body">Each collision <em>borrows</em> an idle voice and <em>returns</em> it when silent. No runtime allocation: Quest 3's mobile CPU cannot afford it.</p>
+        </section>
+
+        <!-- Box 15 — Physics Grab -->
+        <section class="card-side" id="box-15">
+          <p class="eyebrow">15</p>
+          <h2 class="box-title">Physical Grabbing</h2>
+          <p class="box-body">Default XRI grabbing makes objects "float" in the hand — clipping through walls and making forward/back throws feel weak.</p>
+          <p class="box-body">Here, the grabbed cube <strong>remains a physics rigidbody</strong>: collisions push back, and throws follow controller kinematics.</p>
+          <aside class="deep-frame">
+            <p>Lateral throws get a lever boost: wrist rotation becomes high velocity at the held object. <strong>Forward/back throws</strong> lack that boost.</p>
+            <p>Fix: on release, add forward velocity <strong>proportional to grab distance</strong>. Not strict physics, but it <strong>matches player intuition</strong>.</p>
+          </aside>
+        </section>
+
+        <!-- Box 16 — Haptics follow audio -->
+        <section class="card-side" id="box-16">
+          <p class="eyebrow">16</p>
+          <h2 class="box-title">Audio-Driven Haptics</h2>
+          <p class="box-body">Controller vibration <strong>tracks the sound's amplitude envelope in real time</strong> — hand and ear stay on the same timeline.</p>
+        </section>
+
+        <!-- Box 17 — Steam Audio + HRTF -->
+        <section class="card-side" id="box-17">
+          <p class="eyebrow">17</p>
+          <h2 class="box-title">HRTF Spatialization</h2>
+          <p class="box-body">Each voice position goes into <strong>Steam Audio</strong> and is rendered through a generic <strong>HRTF</strong> (head-related transfer function).</p>
+          <aside class="deep-frame"><strong>HRTF</strong>: besides left/right level and timing, localization also depends on tiny EQ / delay cues from the pinna, head, and torso. HRTF folds those cues into stereo, so headphones can still convey front/back and up/down.</aside>
+        </section>
+
+        <!-- Box 18 — Layer breakdown (spans 2 cols) -->
+        <section class="card-side card-wide" id="box-18">
+          <p class="eyebrow">18</p>
+          <h2 class="box-title">Unity ↔ DSP</h2>
+          <p class="box-body">From Faust source to headphones: 5 single-purpose layers, one C# / C++ file each.</p>
+
+          <div class="stack">
+            <div class="layer">
+              <div class="layer-num">1</div>
+              <div>
+                <div class="layer-name">DSP</div>
+                <div class="layer-detail"><code>modal-resonator.dsp</code> → C++ <code>sound_engine.cpp</code> → <code>SE_*</code> plugin for Win / Mac / Android</div>
+              </div>
+            </div>
+            <div class="layer">
+              <div class="layer-num">2</div>
+              <div>
+                <div class="layer-name">P/Invoke Bridge</div>
+                <div class="layer-detail"><code>NativeDSP.cs</code> exposes init, voice allocation, material pair, impact, contact, and compute calls</div>
+              </div>
+            </div>
+            <div class="layer">
+              <div class="layer-num">3</div>
+              <div>
+                <div class="layer-name">Pool</div>
+                <div class="layer-detail"><code>VoicePool.cs</code> calls <code>SE_Init(sr, 64)</code> and creates 64 <code>SpatialVoice</code> objects</div>
+              </div>
+            </div>
+            <div class="layer">
+              <div class="layer-num">4</div>
+              <div>
+                <div class="layer-name">Logic</div>
+                <div class="layer-detail"><code>CollisionSoundManager.cs</code> reads collision physics and updates the DSP</div>
+              </div>
+            </div>
+            <div class="layer">
+              <div class="layer-num">5</div>
+              <div>
+                <div class="layer-name">Output</div>
+                <div class="layer-detail"><code>SpatialVoice</code> → spatialized <code>AudioSource</code> → <code>SE_Compute</code> → Steam Audio HRTF → headphones</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Box 19 — modalsynth WebUI (spans 2 cols, contains iframe) -->
+        <section class="card-side card-wide" id="box-19">
+          <p class="eyebrow">19</p>
+          <h2 class="box-title">WebUI Material Tuning</h2>
+          <p class="box-body">Drag 7 material sliders in the browser and hear the result live — no VR headset required.</p>
+          <p class="box-body">Same DSP source as the VR demo: <strong>Web, Unity, and Quest compile from this one file</strong>.</p>
+
+          <figure class="figure figure-iframe card-inset-figure">
+            <iframe
+              src="https://modalsynth.mofei.me"
+              loading="lazy"
+              allow="autoplay"
+              title="modalsynth — interactive material editor"></iframe>
+            <figcaption class="caption">
+              <span class="role">same engine, browser build</span>
+              <a class="role-link" href="https://modalsynth.mofei.me" target="_blank" rel="noopener">open in own tab ↗</a>
+            </figcaption>
+          </figure>
+        </section>
+
+      </div>
+    </div><!-- /.integration-band -->
+
+    <!-- ════════════════════════════════════════════════════════
+         BOX 20 — About + links
+         ════════════════════════════════════════════════════════ -->
+    <section class="box box-text" id="box-20">
+      <div class="frame">
+        <div class="maker">
+          <p class="eyebrow">20</p>
+          <h2 class="box-title">About the maker</h2>
+          <div class="prose">
+            <p>I'm Mofei Li, graduating from Berklee College of Music in May 2026 with a degree in <strong>Games &amp; Interactive Media Scoring</strong>. This engine is the most ambitious thing I've built so far.</p>
+          </div>
+          <div class="links">
+            <a href="/soundenginevr/assets/poster-en.pdf">Project poster (PDF)</a>
+            <a href="https://modalsynth.mofei.me" target="_blank" rel="noopener">modalsynth.mofei.me ↗</a>
+            <a href="mailto:eddylxt@gmail.com">eddylxt@gmail.com</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="colophon">
+    <p>© 2026 Mofei Li · <a href="/">mofei.me</a> · typeset in Newsreader, Inter, IBM Plex Mono</p>
+  </footer>
+
+  <script>
+    // video play/pause overlay toggle
+    document.querySelectorAll('.figure-video').forEach(fig => {
+      const v = fig.querySelector('video');
+      if (!v) return;
+      v.addEventListener('play',  () => fig.classList.add('is-playing'));
+      v.addEventListener('pause', () => fig.classList.remove('is-playing'));
+      v.addEventListener('ended', () => fig.classList.remove('is-playing'));
+    });
+
+    // TOC current-section highlight via IntersectionObserver
+    (function () {
+      const items = document.querySelectorAll('.toc-item');
+      const byId = new Map();
+      items.forEach(a => byId.set(a.dataset.id, a));
+
+      const setCurrent = (id) => {
+        items.forEach(a => a.classList.toggle('is-current', a.dataset.id === id));
+      };
+
+      const targets = Array.from(byId.keys())
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+
+      const obs = new IntersectionObserver((entries) => {
+        // pick the entry whose top is highest in the viewport (closest to ~25% mark)
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length) setCurrent(visible[0].target.id);
+      }, {
+        rootMargin: '-25% 0px -65% 0px',
+        threshold: 0
+      });
+
+      targets.forEach(t => obs.observe(t));
+    })();
+  </script>
+</body>
+</html>

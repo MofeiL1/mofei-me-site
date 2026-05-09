@@ -77,6 +77,20 @@
     </div>
   </main>
   <script>
+    // View Transitions diagnostics — log when cross-doc VT fires (or not)
+    window.addEventListener('pageswap', (e) => {
+      console.log('[VT pageswap]', e.viewTransition ? 'transition fired' : 'no transition (browser unsupported or blocked)', e);
+    });
+    window.addEventListener('pagereveal', (e) => {
+      console.log('[VT pagereveal]', e.viewTransition ? 'arriving with transition' : 'arriving without transition', e);
+    });
+    console.log('[VT support]', {
+      sameDoc: typeof document.startViewTransition === 'function',
+      crossDoc: 'CSSViewTransitionRule' in window || CSS.supports('selector(::view-transition)'),
+      ua: navigator.userAgent
+    });
+  </script>
+  <script>
     // Liquid glass: Canvas-generated displacement map + mouse-tracking specular + 3D tilt
     (function () {
       const link = document.querySelector('.featured-link');

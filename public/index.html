@@ -58,6 +58,21 @@
   <main>
     <h1>Mofei Li</h1>
     <p class="status">Under construction · 网站建设中</p>
+    <nav class="links" aria-label="External links">
+      <a href="https://github.com/MofeiL1" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </nav>
+    <div class="email">
+      <span class="email-addr">mofei_li@qq.com</span>
+      <button type="button" class="icon-btn" id="copy-email" aria-label="复制邮箱地址" title="复制邮箱">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+      <a class="icon-btn" href="mailto:mofei_li@qq.com" aria-label="写邮件给我" title="写邮件">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+      </a>
+    </div>
     <a class="featured-link" href="/soundenginevr/">
       <span class="featured-content">
         <span class="featured-eyebrow">Latest project</span>
@@ -69,18 +84,23 @@
     </a>
     <div class="qrs">
       <a class="qr-card" href="https://instagram.com/non_ink_l" target="_blank" rel="noopener">
-        <img src="/ig-qr.svg" alt="Instagram QR" width="240" height="240">
+        <img src="/ig-qr.svg" alt="Instagram QR" width="180" height="180">
         <div class="meta">
           <span class="platform">Instagram</span>
           <span class="handle">@NON_INK_L</span>
         </div>
       </a>
-      <div class="qr-card">
-        <img src="/wechat-qr.svg" alt="WeChat QR" width="240" height="240">
-        <div class="meta">
-          <span class="platform">WeChat</span>
-          <span class="handle">EdAKTK</span>
+      <div class="wechat-stack">
+        <div class="qr-card">
+          <img src="/wechat-qr.svg" alt="WeChat QR" width="180" height="180">
+          <div class="meta">
+            <span class="platform">WeChat</span>
+            <span class="handle">EdAKTK</span>
+          </div>
         </div>
+        <a class="mp-card" href="https://weixin.qq.com/r/mp/Zxbm-mbEyDu3rSKd90N1" target="_blank" rel="noopener" aria-label="关注微信公众号 艾迪的笔记">
+          <img src="/wechat-mp.png" alt="微信公众号 艾迪的笔记 — 微信搜一搜关注" width="1080" height="394">
+        </a>
       </div>
     </div>
   </main>
@@ -257,6 +277,34 @@
         pendingY = 0.5;
         if (!rafId) rafId = requestAnimationFrame(applyTilt);
       });
+    })();
+  </script>
+  <script>
+    // Copy-to-clipboard for the email address. On success the icon flashes
+    // bright with a faint glow, then slowly fades back to its resting color.
+    (function () {
+      const btn = document.getElementById('copy-email');
+      if (!btn) return;
+      const email = 'mofei_li@qq.com';
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(email);
+        } catch (_) {
+          const ta = document.createElement('textarea');
+          ta.value = email;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          ta.remove();
+        }
+        // restart the flash animation on every click
+        btn.classList.remove('flash');
+        void btn.offsetWidth;
+        btn.classList.add('flash');
+      });
+      btn.addEventListener('animationend', () => btn.classList.remove('flash'));
     })();
   </script>
 </body>
